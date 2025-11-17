@@ -2,36 +2,50 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Street View Random - Gratuit</title>
+<title>GeoGuessr Français - Free Edition</title>
 <style>
-  body { margin:0; padding:0; font-family: Arial, sans-serif; }
-  #menu {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-    padding: 10px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.4);
+  body { margin:0; font-family:Arial, sans-serif; overflow:hidden; }
+  #topbar {
+    position:absolute; top:10px; left:10px; z-index:10;
+    background:white; padding:10px 15px; border-radius:8px;
+    box-shadow:0 0 5px rgba(0,0,0,0.4);
+  }
+  #map {
+    position:absolute; bottom:10px; right:10px; width:250px; height:250px;
+    z-index:10; border:2px solid #333; border-radius:6px;
+    filter:blur(2px) brightness(0.7); transition:0.4s;
+  }
+  #map:hover { filter:none; }
+  #guessBtn, #nextBtn {
+    margin-top:5px; width:100%; padding:8px; font-size:16px;
+    cursor:pointer; border-radius:6px;
   }
   iframe { width:100vw; height:100vh; border:none; }
+  #scoreboard {
+    position:absolute; top:10px; right:10px; z-index:10;
+    background:white; padding:10px; border-radius:8px;
+    box-shadow:0 0 5px rgba(0,0,0,0.4);
+  }
 </style>
 </head>
 <body>
 
-<div id="menu">
-  <label>Choisir une ville :</label>
+<div id="topbar">
+  <label>Ville :</label>
   <select id="city-select">
     <option value="paris">Paris</option>
     <option value="lyon">Lyon</option>
     <option value="marseille">Marseille</option>
     <option value="strasbourg">Strasbourg</option>
   </select>
-  <button onclick="newPos()">Nouvelle position</button>
+  <button id="guessBtn" onclick="guess()">📍 Deviner</button>
+  <button id="nextBtn" style="display:none;" onclick="startRound()">⟳ Prochaine manche</button>
 </div>
 
-<iframe id="sv" loading="lazy" allowfullscreen></iframe>
+<div id="scoreboard">Score : <span id="score">0</span></div>
+
+<iframe id="sv" allowfullscreen></iframe>
+<iframe id="map" src="https://www.openstreetmap.org/export/embed.html?bbox=-5.2,41,9.6,51.2&layer=mapnik"></iframe>
 
 <script>
 const bounds = {
@@ -41,19 +55,64 @@ const bounds = {
   strasbourg:{n:48.646,s:48.519,e:7.828,w:7.664}
 };
 
-function newPos(){
+let answer = {lat:0, lng:0};
+let score = 0;
+
+function randomCoord(b){ return Math.random()*(b.n - b.s) + b.s; }
+
+function startRound(){  
   const city = document.getElementById("city-select").value;
   const b = bounds[city];
+  
+  function tryStreetView(){
+    const lat = randomCoord(b);
+    const lng = Math.random()*(b.e - b.w) + b.w;
+    const url = `https://www.google.com/maps?q&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed`;
 
-  const lat = Math.random()*(b.n - b.s) + b.s;
-  const lng = Math.random()*(b.e - b.w) + b.w;
+    document.getElementById("sv").src = url;
+    answer = {lat, lng};
 
-  document.getElementById("sv").src =
-    `https://www.google.com/maps?q&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed`;
+    setTimeout(()=>{
+      const frame = document.getElementById("sv").contentWindow;
+      if (!frame || frame.length === 0) tryStreetView();
+    }, 1200);
+  }
+  
+  tryStreetView();
+  document.getElementById("guessBtn").style.display = "inline-block";
+  document.getElementById("nextBtn").style.display = "none";
 }
 
-// Start automatically
-newPos();
+function distance(lat1,lng1,lat2,lng2){
+  const toRad = x => x * Math.PI/180;
+  const R = 6371;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lng2-lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function guess(){
+  alert("Clique sur la carte (OpenStreetMap) pour deviner.\n⚠ Si ça clique pas, appuie sur CTRL + clic.");
+
+  document.getElementById("map").addEventListener("click", function(e){
+      const guessLat = 51.2 - (e.offsetY / 250)*(51.2-41);
+      const guessLng = -5.2 + (e.offsetX / 250)*(9.6+5.2);
+
+      const d = Math.round(distance(answer.lat, answer.lng, guessLat, guessLng));
+      const pts = Math.max(0, 5000 - d * 80);
+      score += pts;
+      
+      document.getElementById("score").innerText = score;
+
+      alert(`🚩 Distance : ${d} km\n🎯 Points gagnés : ${pts}`);
+
+      document.getElementById("nextBtn").style.display = "inline-block";
+      document.getElementById("guessBtn").style.display = "none";
+  }, {once:true});
+}
+
+startRound();
 </script>
 
 </body>
