@@ -2,70 +2,51 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>GeoGuessr Gratuit - Street View</title>
+<title>GeoGuessr Gratuit - Corrected</title>
 <style>
-    body { margin: 0; padding: 0; }
-    #menu {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 10;
-        background: white;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 0 0 5px rgba(0,0,0,0.4);
-        font-family: Arial, sans-serif;
+    body{margin:0}
+    #menu{
+        position:absolute;top:10px;left:10px;z-index:10;
+        background:white;padding:10px;border-radius:8px;
+        box-shadow:0 0 5px rgba(0,0,0,.4);font-family:Arial
     }
-    iframe {
-        width: 100vw;
-        height: 100vh;
-        border: none;
-    }
+    iframe{width:100vw;height:100vh;border:none}
 </style>
 </head>
 <body>
 
 <div id="menu">
-    <label>Choisir une ville :</label>
-    <select id="city-select">
+    <select id="city">
         <option value="paris">Paris</option>
         <option value="lyon">Lyon</option>
         <option value="marseille">Marseille</option>
         <option value="strasbourg">Strasbourg</option>
     </select>
-    <button onclick="newPosition()">Nouvelle position</button>
+    <button onclick="newPos()">Nouvelle position</button>
 </div>
 
-<iframe id="streetview" allow="accelerometer; gyroscope; fullscreen"></iframe>
+<iframe id="sv" allowfullscreen loading="lazy"></iframe>
 
 <script>
-// Coordonnées limites pour chaque ville
 const bounds = {
-    paris: { n:48.9020, s:48.8156, e:2.4699, w:2.2257 },
-    lyon: { n:45.8357, s:45.7076, e:4.9446, w:4.7681 },
-    marseille:{ n:43.3947, s:43.2085, e:5.5320, w:5.2130 },
-    strasbourg:{ n:48.646, s:48.519, e:7.828, w:7.664 }
+  paris:{n:48.9020,s:48.8156,e:2.4699,w:2.2257},
+  lyon:{n:45.8357,s:45.7076,e:4.9446,w:4.7681},
+  marseille:{n:43.3947,s:43.2085,e:5.5320,w:5.2130},
+  strasbourg:{n:48.646,s:48.519,e:7.828,w:7.664}
 };
 
-// Génération position aléatoire
-function randomLatLng(city) {
-    const c = bounds[city];
-    const lat = Math.random() * (c.n - c.s) + c.s;
-    const lng = Math.random() * (c.e - c.w) + c.w;
-    return { lat, lng };
+// generate random coords then build proper embed URL
+function newPos(){
+  const city=document.getElementById("city").value;
+  const b=bounds[city];
+  const lat=Math.random()*(b.n-b.s)+b.s;
+  const lng=Math.random()*(b.e-b.w)+b.w;
+
+  document.getElementById("sv").src=
+  `https://www.google.com/maps/embed/v1/streetview?location=${lat},${lng}&heading=0&pitch=0&key=AIzaSyCOXnj4r5TsVyxgqRIkT9DkD__AKt5JUXs`;
 }
 
-// Mise à jour iframe
-function newPosition() {
-    const city = document.getElementById("city-select").value;
-    const { lat, lng } = randomLatLng(city);
-
-    const src = `https://www.google.com/maps/embed?pb=!4v!6m8!1m3!1d1!2d${lng}!3d${lat}!3m2!1i1024!2i768!4f0`;
-    document.getElementById("streetview").src = src;
-}
-
-// Chargement initial
-newPosition();
+newPos();
 </script>
 
 </body>
