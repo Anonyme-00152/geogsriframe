@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Mini GeoGuessr Gratuit</title>
+<title>Mini GeoGuessr Streets</title>
 <style>
   body { margin:0; font-family:Arial, sans-serif; overflow:hidden; }
   #topbar {
@@ -10,123 +10,82 @@
     background:white; padding:10px 15px; border-radius:8px;
     box-shadow:0 0 5px rgba(0,0,0,0.4);
   }
-  #map {
-    position:absolute; bottom:10px; right:10px; width:250px; height:250px;
-    z-index:10; border:2px solid #333; border-radius:6px;
-    filter:blur(2px) brightness(0.7); transition:0.4s;
-  }
-  #map:hover { filter:none; }
-  #guessBtn, #nextBtn {
-    margin-top:5px; width:100%; padding:8px; font-size:16px;
-    cursor:pointer; border-radius:6px;
-  }
+  #city-select, #nextBtn { margin-top:5px; width:100%; padding:6px; font-size:16px; }
   iframe { width:100vw; height:100vh; border:none; }
-  #scoreboard {
-    position:absolute; top:10px; right:10px; z-index:10;
-    background:white; padding:10px; border-radius:8px;
-    box-shadow:0 0 5px rgba(0,0,0,0.4);
-  }
 </style>
 </head>
 <body>
 
 <div id="topbar">
-  <label>Ville :</label>
+  <label>Choisir une ville :</label>
   <select id="city-select">
     <option value="paris">Paris</option>
-    <option value="lyon">Lyon</option>
-    <option value="marseille">Marseille</option>
     <option value="strasbourg">Strasbourg</option>
+    <option value="reichshoffen">Reichshoffen</option>
+    <option value="lunel">Lunel</option>
   </select>
-  <button id="guessBtn" onclick="guess()">📍 Deviner</button>
-  <button id="nextBtn" style="display:none;" onclick="startRound()">⟳ Prochaine manche</button>
+  <button id="nextBtn" onclick="newPosition()">⟳ Nouvelle position</button>
 </div>
 
-<div id="scoreboard">Score : <span id="score">0</span></div>
-
 <iframe id="sv" allowfullscreen></iframe>
-<iframe id="map" src="https://www.openstreetmap.org/export/embed.html?bbox=-5.2,41,9.6,51.2&layer=mapnik"></iframe>
 
 <script>
-// ----- 1. Base de points Street View garantis -----
+// ----- Liste des points Street View (20 par ville, exemple simplifié)
 const cityPoints = {
   paris: [
-    {lat:48.8566,lng:2.3522}, {lat:48.8606,lng:2.3376},
-    {lat:48.8738,lng:2.2950}, {lat:48.8867,lng:2.3431},
-    {lat:48.8515,lng:2.3470}
-  ],
-  lyon: [
-    {lat:45.7640,lng:4.8357}, {lat:45.7578,lng:4.8320},
-    {lat:45.7600,lng:4.8280}, {lat:45.7680,lng:4.8350},
-    {lat:45.7625,lng:4.8410}
-  ],
-  marseille: [
-    {lat:43.2965,lng:5.3698}, {lat:43.3000,lng:5.3800},
-    {lat:43.2920,lng:5.3700}, {lat:43.2850,lng:5.3710},
-    {lat:43.2980,lng:5.3670}
+    {lat:48.8566,lng:2.3522},{lat:48.8606,lng:2.3376},{lat:48.8738,lng:2.2950},
+    {lat:48.8867,lng:2.3431},{lat:48.8515,lng:2.3470},{lat:48.8550,lng:2.3490},
+    {lat:48.8580,lng:2.3400},{lat:48.8625,lng:2.3450},{lat:48.8650,lng:2.3520},
+    {lat:48.8670,lng:2.3600},{lat:48.8700,lng:2.3650},{lat:48.8720,lng:2.3700},
+    {lat:48.8740,lng:2.3750},{lat:48.8760,lng:2.3800},{lat:48.8780,lng:2.3850},
+    {lat:48.8800,lng:2.3900},{lat:48.8820,lng:2.3950},{lat:48.8840,lng:2.4000},
+    {lat:48.8860,lng:2.4050},{lat:48.8880,lng:2.4100}
   ],
   strasbourg: [
-    {lat:48.5734,lng:7.7521}, {lat:48.5760,lng:7.7540},
-    {lat:48.5700,lng:7.7600}, {lat:48.5745,lng:7.7400},
-    {lat:48.5690,lng:7.7550}
+    {lat:48.5734,lng:7.7521},{lat:48.5740,lng:7.7550},{lat:48.5745,lng:7.7580},
+    {lat:48.5750,lng:7.7600},{lat:48.5755,lng:7.7630},{lat:48.5760,lng:7.7650},
+    {lat:48.5765,lng:7.7680},{lat:48.5770,lng:7.7700},{lat:48.5775,lng:7.7730},
+    {lat:48.5780,lng:7.7750},{lat:48.5785,lng:7.7780},{lat:48.5790,lng:7.7800},
+    {lat:48.5795,lng:7.7830},{lat:48.5800,lng:7.7850},{lat:48.5805,lng:7.7880},
+    {lat:48.5810,lng:7.7900},{lat:48.5815,lng:7.7930},{lat:48.5820,lng:7.7950},
+    {lat:48.5825,lng:7.7980},{lat:48.5830,lng:7.8000}
+  ],
+  reichshoffen: [
+    {lat:48.8960,lng:7.9010},{lat:48.8970,lng:7.9030},{lat:48.8980,lng:7.9050},
+    {lat:48.8990,lng:7.9070},{lat:48.9000,lng:7.9090},{lat:48.9010,lng:7.9110},
+    {lat:48.9020,lng:7.9130},{lat:48.9030,lng:7.9150},{lat:48.9040,lng:7.9170},
+    {lat:48.9050,lng:7.9190},{lat:48.9060,lng:7.9210},{lat:48.9070,lng:7.9230},
+    {lat:48.9080,lng:7.9250},{lat:48.9090,lng:7.9270},{lat:48.9100,lng:7.9290},
+    {lat:48.9110,lng:7.9310},{lat:48.9120,lng:7.9330},{lat:48.9130,lng:7.9350},
+    {lat:48.9140,lng:7.9370},{lat:48.9150,lng:7.9390}
+  ],
+  lunel: [
+    {lat:43.6760,lng:4.0810},{lat:43.6770,lng:4.0830},{lat:43.6780,lng:4.0850},
+    {lat:43.6790,lng:4.0870},{lat:43.6800,lng:4.0890},{lat:43.6810,lng:4.0910},
+    {lat:43.6820,lng:4.0930},{lat:43.6830,lng:4.0950},{lat:43.6840,lng:4.0970},
+    {lat:43.6850,lng:4.0990},{lat:43.6860,lng:4.1010},{lat:43.6870,lng:4.1030},
+    {lat:43.6880,lng:4.1050},{lat:43.6890,lng:4.1070},{lat:43.6900,lng:4.1090},
+    {lat:43.6910,lng:4.1110},{lat:43.6920,lng:4.1130},{lat:43.6930,lng:4.1150},
+    {lat:43.6940,lng:4.1170},{lat:43.6950,lng:4.1190}
   ]
 };
 
-// ----- 2. Variables de jeu -----
-let answer = {lat:0,lng:0};
-let score = 0;
-
-// Tirer un point au hasard
-function getRandomPoint(points){ 
-  return points[Math.floor(Math.random()*points.length)]; 
+// Tirer un point aléatoire
+function getRandomPoint(points){
+  return points[Math.floor(Math.random()*points.length)];
 }
 
-// Distance en km
-function distance(lat1,lng1,lat2,lng2){
-  const toRad = x => x * Math.PI/180;
-  const R = 6371;
-  const dLat = toRad(lat2-lat1);
-  const dLon = toRad(lng2-lng1);
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-// ----- 3. Lancer une manche -----
-function startRound(){  
+// Nouvelle position
+function newPosition(){
   const city = document.getElementById("city-select").value;
   const point = getRandomPoint(cityPoints[city]);
-  answer = point;
 
-  document.getElementById("sv").src = 
+  document.getElementById("sv").src =
     `https://www.google.com/maps?q&layer=c&cbll=${point.lat},${point.lng}&cbp=12,0,0,0,0&output=svembed`;
-
-  document.getElementById("guessBtn").style.display = "inline-block";
-  document.getElementById("nextBtn").style.display = "none";
 }
 
-// ----- 4. Fonction deviner sur la carte -----
-function guess(){
-  alert("Clique sur la carte (OpenStreetMap) pour deviner.");
-
-  document.getElementById("map").addEventListener("click", function(e){
-      const guessLat = 51.2 - (e.offsetY/250)*(51.2-41);
-      const guessLng = -5.2 + (e.offsetX/250)*(9.6+5.2);
-
-      const d = Math.round(distance(answer.lat, answer.lng, guessLat, guessLng));
-      const pts = Math.max(0,5000 - d*80);
-      score += pts;
-      
-      document.getElementById("score").innerText = score;
-
-      alert(`🚩 Distance : ${d} km\n🎯 Points gagnés : ${pts}`);
-
-      document.getElementById("nextBtn").style.display = "inline-block";
-      document.getElementById("guessBtn").style.display = "none";
-  }, {once:true});
-}
-
-// ----- 5. Démarrage automatique -----
-startRound();
+// Démarrage initial
+newPosition();
 </script>
 
 </body>
