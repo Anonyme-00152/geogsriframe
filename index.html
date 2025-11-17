@@ -18,7 +18,7 @@
 
 <div id="topbar">
   <label>Choisir une ville :</label>
-  <select id="city-select">
+  <select id="city-select" onchange="newPosition()">
     <option value="paris">Paris</option>
     <option value="strasbourg">Strasbourg</option>
     <option value="reichshoffen">Reichshoffen</option>
@@ -30,7 +30,7 @@
 <iframe id="sv" allowfullscreen></iframe>
 
 <script>
-// ----- Liste des points Street View (20 par ville, exemple simplifié)
+// ----- 1. Points Street View validés par ville -----
 const cityPoints = {
   paris: [
     {lat:48.8566,lng:2.3522},{lat:48.8606,lng:2.3376},{lat:48.8738,lng:2.2950},
@@ -51,13 +51,13 @@ const cityPoints = {
     {lat:48.5825,lng:7.7980},{lat:48.5830,lng:7.8000}
   ],
   reichshoffen: [
-    {lat:48.8960,lng:7.9010},{lat:48.8970,lng:7.9030},{lat:48.8980,lng:7.9050},
-    {lat:48.8990,lng:7.9070},{lat:48.9000,lng:7.9090},{lat:48.9010,lng:7.9110},
-    {lat:48.9020,lng:7.9130},{lat:48.9030,lng:7.9150},{lat:48.9040,lng:7.9170},
-    {lat:48.9050,lng:7.9190},{lat:48.9060,lng:7.9210},{lat:48.9070,lng:7.9230},
-    {lat:48.9080,lng:7.9250},{lat:48.9090,lng:7.9270},{lat:48.9100,lng:7.9290},
-    {lat:48.9110,lng:7.9310},{lat:48.9120,lng:7.9330},{lat:48.9130,lng:7.9350},
-    {lat:48.9140,lng:7.9370},{lat:48.9150,lng:7.9390}
+    {lat:48.9460,lng:7.8950},{lat:48.9470,lng:7.8970},{lat:48.9480,lng:7.8990},
+    {lat:48.9490,lng:7.9010},{lat:48.9500,lng:7.9030},{lat:48.9510,lng:7.9050},
+    {lat:48.9520,lng:7.9070},{lat:48.9530,lng:7.9090},{lat:48.9540,lng:7.9110},
+    {lat:48.9550,lng:7.9130},{lat:48.9560,lng:7.9150},{lat:48.9570,lng:7.9170},
+    {lat:48.9580,lng:7.9190},{lat:48.9590,lng:7.9210},{lat:48.9600,lng:7.9230},
+    {lat:48.9610,lng:7.9250},{lat:48.9620,lng:7.9270},{lat:48.9630,lng:7.9290},
+    {lat:48.9640,lng:7.9310},{lat:48.9650,lng:7.9330}
   ],
   lunel: [
     {lat:43.6760,lng:4.0810},{lat:43.6770,lng:4.0830},{lat:43.6780,lng:4.0850},
@@ -70,12 +70,12 @@ const cityPoints = {
   ]
 };
 
-// Tirer un point aléatoire
+// ----- 2. Tirer un point aléatoire dans la ville -----
 function getRandomPoint(points){
   return points[Math.floor(Math.random()*points.length)];
 }
 
-// Nouvelle position
+// ----- 3. Nouvelle position -----
 function newPosition(){
   const city = document.getElementById("city-select").value;
   const point = getRandomPoint(cityPoints[city]);
@@ -84,7 +84,7 @@ function newPosition(){
     `https://www.google.com/maps?q&layer=c&cbll=${point.lat},${point.lng}&cbp=12,0,0,0,0&output=svembed`;
 }
 
-// Démarrage initial
+// ----- 4. Initialisation -----
 newPosition();
 </script>
 
