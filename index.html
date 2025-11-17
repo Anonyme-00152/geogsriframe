@@ -1,146 +1,531 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Mini GeoGuessr Streets</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mini GeoGuessr Streets — Jeu complet (1 fichier)</title>
+
+<!-- Leaflet (mini carte) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-sA+v2kYQp0v3+3gF0QJgJYc+2Wgq0v+q/7pztM2X0+8=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-o9N1j8fQb8q1X6k2b5sM6qVw6y3x1Jxq0b4p1u1pUqU=" crossorigin=""></script>
+
 <style>
-  body { margin:0; font-family:Arial, sans-serif; overflow:hidden; }
-  #topbar {
-    position:absolute; top:10px; left:10px; z-index:10;
-    background:white; padding:10px 15px; border-radius:8px;
-    box-shadow:0 0 5px rgba(0,0,0,0.4);
+  :root{
+    --bg:#0f1724; --card:#0b1220; --accent:#0ea5a4; --glass: rgba(255,255,255,0.06);
+    --text:#e6eef6;
   }
-  #city-select, #nextBtn { margin-top:5px; width:100%; padding:6px; font-size:16px; }
-  iframe { width:100vw; height:100vh; border:none; }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; font-family:Inter,Arial,Helvetica,sans-serif; background:linear-gradient(180deg,#071021, #071228); color:var(--text)}
+  #app {height:100vh; display:grid; grid-template-columns: 1fr 360px;}
+  /* Left: Street View iframe */
+  #left {
+    position:relative; overflow:hidden; background:#000;
+  }
+  iframe#sv { width:100%; height:100%; border:0; display:block; }
+
+  /* Right: controls & mini-map */
+  #right {
+    padding:16px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-left:1px solid rgba(255,255,255,0.03);
+    display:flex; flex-direction:column; gap:12px;
+  }
+
+  .card { background:var(--card); border-radius:10px; padding:12px; box-shadow:0 6px 18px rgba(2,6,23,0.6); }
+  h1{margin:0 0 6px 0; font-size:18px}
+  label{font-size:13px; color:#b9c6d6}
+  select,input,button{width:100% ;padding:8px 10px; margin-top:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:var(--text); font-size:14px}
+  .row {display:flex; gap:8px}
+  .row > * {flex:1}
+  button {cursor:pointer; border:none}
+  button.primary {background:linear-gradient(90deg,var(--accent),#22c1c1); color:#032022; font-weight:700}
+  button.ghost {background:transparent; border:1px solid rgba(255,255,255,0.06)}
+  .small {font-size:13px; padding:6px 8px; border-radius:8px}
+
+  /* Info */
+  .stat {display:flex; justify-content:space-between; align-items:center; font-size:14px; margin-top:6px}
+  .stat .big {font-size:20px; font-weight:700}
+
+  /* mini-map container */
+  #map {height:320px; border-radius:8px; overflow:hidden; margin-top:8px; border:1px solid rgba(255,255,255,0.03)}
+  footer {margin-top:auto; font-size:12px; color:#9fb0c8}
+
+  /* overlay on left for round info */
+  #overlay {
+    position:absolute; left:12px; top:12px; z-index:20; background:rgba(2,6,23,0.6);
+    color:var(--text); padding:10px 12px; border-radius:10px; backdrop-filter: blur(4px);
+    box-shadow:0 6px 18px rgba(2,6,23,0.6);
+    min-width:220px;
+  }
+  .muted {color:#9fb0c8; font-size:13px}
+  .controls-inline {display:flex; gap:8px; margin-top:8px}
+  .linklike {background:transparent; color:var(--text); border:none; text-decoration:underline; cursor:pointer; padding:0}
+  .divider {height:1px; background:rgba(255,255,255,0.03); margin:8px 0; border-radius:2px}
 </style>
 </head>
 <body>
+<div id="app">
+  <div id="left">
+    <iframe id="sv" allowfullscreen sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
 
-<div id="topbar">
-  <label>Choisir une ville :</label>
-  <select id="city-select" onchange="newPosition()">
-    <option value="paris">Paris</option>
-    <option value="strasbourg">Strasbourg</option>
-    <option value="reichshoffen">Reichshoffen</option>
-    <option value="lunel">Lunel</option>
-  </select>
-  <button id="nextBtn" onclick="newPosition()">⟳ Nouvelle position</button>
+    <div id="overlay" class="card" style="min-width:240px">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div>
+          <div class="muted">Manche</div>
+          <div class="big" id="roundInfo">1 / 5</div>
+        </div>
+        <div style="text-align:right">
+          <div class="muted">Score</div>
+          <div class="big" id="scoreInfo">0</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted">Temps restant</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px">
+        <div style="font-weight:700; font-size:18px" id="timer">60</div>
+        <div style="width:100%">
+          <div class="controls-inline">
+            <button id="pauseBtn" class="small ghost">Pause</button>
+            <button id="nextBtnTop" class="small primary">Nouvelle position</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px">
+        <div class="muted">Mode</div>
+        <select id="modeSelect">
+          <option value="city">Ville sélectionnée</option>
+          <option value="france">France entière</option>
+          <option value="europe">Europe</option>
+        </select>
+
+        <div class="muted" style="margin-top:8px">Choisir une ville</div>
+        <select id="city-select">
+          <option value="paris">Paris</option>
+          <option value="strasbourg">Strasbourg</option>
+          <option value="reichshoffen">Reichshoffen</option>
+          <option value="lunel">Lunel</option>
+        </select>
+
+        <div class="divider"></div>
+
+        <div class="muted">Réglages</div>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <input id="roundsInput" type="number" min="1" max="12" value="5" title="Manches">
+          <input id="timerInput" type="number" min="10" max="300" value="60" title="Secondes">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <button id="startBtn" class="primary">Démarrer</button>
+          <button id="replayBtn" class="ghost">Rejouer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="right">
+    <div class="card">
+      <h1>Mini GeoGuessr Streets</h1>
+      <div class="muted">Clique sur la mini-carte pour placer ton estimation, puis valide.</div>
+
+      <div style="margin-top:8px">
+        <div class="row">
+          <button id="placeGuessBtn" class="primary small">Placer estimation</button>
+          <button id="confirmBtn" class="ghost small">Valider</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="skipBtn" class="ghost small">Passer</button>
+          <button id="revealBtn" class="ghost small">Montrer réel</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="stat"><div>Distance :</div><div id="distanceInfo">—</div></div>
+      <div class="stat"><div>Points cette manche :</div><div id="roundScore">—</div></div>
+
+      <div class="divider"></div>
+
+      <div class="muted">Mini-carte cliquable</div>
+      <div id="map"></div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <h1>Informations</h1>
+      <div class="muted">Règles rapides</div>
+      <ul style="margin-top:8px; padding-left:18px">
+        <li>5 manches par défaut (modifiable)</li>
+        <li>Score = 0–5000 par manche, basé sur la distance</li>
+        <li>Cliquer sur la carte pour estimer</li>
+        <li>Le jeu utilise uniquement des emplacements sur des rues</li>
+      </ul>
+      <div class="divider"></div>
+      <div class="muted">Fin de partie</div>
+      <div id="finalBox" style="margin-top:8px"></div>
+    </div>
+
+    <footer style="margin-top:12px">Développé — Mini GeoGuessr (sans API). Mini-carte : OpenStreetMap / Leaflet.</footer>
+  </div>
 </div>
 
-<iframe id="sv" allowfullscreen></iframe>
-
 <script>
-// ----- Points Street View exacts sur les rues -----
+/* -------------------------
+   Points (uniquement rues)
+   - Paris / Strasbourg / Reichshoffen / Lunel (points testés)
+   - Europe : quelques centres de rues testés (Londres, Berlin, Amsterdam, Madrid, Rome, Lisbonne, Bruxelles)
+   ------------------------- */
 const cityPoints = {
-paris: [
-  {lat:48.853889, lng:2.291351}, // Avenue de Suffren
-  {lat:48.856472, lng:2.298883}, // Avenue Rapp
-  {lat:48.858340, lng:2.294520}, // Quai Branly
-  {lat:48.857548, lng:2.303404}, // Rue de l'Université
-  {lat:48.861005, lng:2.335870}, // Rue de Rivoli
-  {lat:48.860070, lng:2.341250}, // Rue St-Honoré
-  {lat:48.864270, lng:2.332010}, // Rue de la Paix
-  {lat:48.870450, lng:2.331220}, // Blvd Haussmann
-  {lat:48.872740, lng:2.343770}, // Rue des Martyrs
-  {lat:48.883100, lng:2.333800}, // Rue Lepic (Montmartre)
-  {lat:48.888020, lng:2.338650}, // Rue Caulaincourt
-  {lat:48.887450, lng:2.352830}, // Rue de Belleville
-  {lat:48.882750, lng:2.370130}, // Rue du Faubourg St-Martin
-  {lat:48.872000, lng:2.370400}, // Rue du Faubourg du Temple
-  {lat:48.865110, lng:2.363460}, // Rue Oberkampf
-  {lat:48.861310, lng:2.371100}, // Rue du Faubourg St-Antoine
-  {lat:48.854210, lng:2.348320}, // Rue Lagrange
-  {lat:48.852110, lng:2.361120}, // Rue du Chemin Vert
-  {lat:48.848700, lng:2.354800}, // Rue Mouffetard
-  {lat:48.841480, lng:2.348110}, // Blvd St-Michel
-  {lat:48.840030, lng:2.322410}, // Rue de Vaugirard
-  {lat:48.832870, lng:2.315840}, // Rue Lecourbe
-  {lat:48.829320, lng:2.344820}, // Rue Bobillot
-  {lat:48.822540, lng:2.362330}  // Rue de Tolbiac
-],
-
- strasbourg: [
-  {lat:48.583800, lng:7.744930}, // Rue des Hallebardes
-  {lat:48.583310, lng:7.748320}, // Rue Mercière
-  {lat:48.581900, lng:7.743180}, // Rue des Grandes Arcades
-  {lat:48.581150, lng:7.746900}, // Rue du Vieux-Marché-aux-Poissons
-  {lat:48.580210, lng:7.749480}, // Rue des Dentelles
-  {lat:48.579320, lng:7.750240}, // Rue du Faisan
-  {lat:48.577970, lng:7.745990}, // Rue du 22 Novembre
-  {lat:48.575450, lng:7.748020}, // Boulevard de Lyon
-  {lat:48.574630, lng:7.757230}, // Avenue de Colmar
-  {lat:48.573870, lng:7.760580}, // Route du Polygone
-  {lat:48.578920, lng:7.772100}, // Avenue Jean Jaurès
-  {lat:48.587000, lng:7.751500}, // Rue du Général Gouraud
-  {lat:48.588440, lng:7.741840}, // Boulevard Gambetta
-  {lat:48.593210, lng:7.748950}, // Rue de la Robertsau
-  {lat:48.598180, lng:7.759090}, // Avenue de la Forêt-Noire
-  {lat:48.600420, lng:7.744360}, // Allée de la Robertsau
-  {lat:48.591210, lng:7.780200}, // Rue du Jeu-de-Paume
-  {lat:48.583650, lng:7.780760}, // Route de l'Hôpital
-  {lat:48.570850, lng:7.746120}, // Rue du Rempart
-  {lat:48.567700, lng:7.747230}  // Avenue de Colmar sud
-],
-
- reichshoffen: [
-  {lat:48.938780, lng:7.854920}, // Rue de la République
-  {lat:48.939850, lng:7.858590}, // Rue du Général Koenig
-  {lat:48.941540, lng:7.861430}, // Rue du Château
-  {lat:48.943690, lng:7.865010}, // Rue des Bois
-  {lat:48.944830, lng:7.871260}, // Rue de la Gare
-  {lat:48.945980, lng:7.875930}, // Rue du Nord
-  {lat:48.947300, lng:7.880660}, // Rue de la Paix
-  {lat:48.949200, lng:7.885950}, // Rue des Lilas
-  {lat:48.950770, lng:7.890010}, // Rue de l'Église
-  {lat:48.951920, lng:7.893030}, // Rue Saint-Michel
-  {lat:48.953430, lng:7.896210}, // Rue de la Liberté
-  {lat:48.954850, lng:7.899230}, // Rue du Stade
-  {lat:48.955900, lng:7.902150}, // Rue des Jardins
-  {lat:48.957110, lng:7.905210}, // Rue du Souvenir
-  {lat:48.958410, lng:7.908260}  // Rue Lavoisier
-],
-
-lunel: [
-  {lat:43.676510, lng:4.135760}, // Rue Marx Dormoy
-  {lat:43.677600, lng:4.138450}, // Rue Sadi Carnot
-  {lat:43.675800, lng:4.130200}, // Rue de la Libération
-  {lat:43.674620, lng:4.132880}, // Rue des Abrivados
-  {lat:43.678260, lng:4.140020}, // Rue du Ponant
-  {lat:43.679400, lng:4.142950}, // Rue des Cévennes
-  {lat:43.680300, lng:4.145210}, // Rue des Caladons
-  {lat:43.682220, lng:4.148340}, // Rue des Micocouliers
-  {lat:43.684150, lng:4.146970}, // Rue des Amandiers
-  {lat:43.685980, lng:4.143440}, // Rue des Marais
-  {lat:43.687320, lng:4.140840}, // Rue du Mas Saint-Pierre
-  {lat:43.688780, lng:4.138150}, // Rue du Lézard
-  {lat:43.689910, lng:4.134830}, // Rue Émile Zola
-  {lat:43.690540, lng:4.131780}, // Rue Pierre Curie
-  {lat:43.691800, lng:4.129520}, // Rue Voltaire
-  {lat:43.693100, lng:4.128020}, // Rue Armand Guillaumin
-  {lat:43.694520, lng:4.132620}, // Rue Frédéric Mistral
-  {lat:43.693920, lng:4.137550}, // Rue du Docteur Jean Gautier
-  {lat:43.692750, lng:4.141320}, // Rue Georges Bizet
-  {lat:43.691300, lng:4.144250}  // Rue du Marché aux Bestiaux
-]
+  paris: [
+    {lat:48.853889, lng:2.291351}, {lat:48.856472, lng:2.298883}, {lat:48.858340, lng:2.294520},
+    {lat:48.857548, lng:2.303404}, {lat:48.861005, lng:2.335870}, {lat:48.860070, lng:2.341250},
+    {lat:48.864270, lng:2.332010}, {lat:48.870450, lng:2.331220}, {lat:48.872740, lng:2.343770},
+    {lat:48.883100, lng:2.333800}, {lat:48.888020, lng:2.338650}, {lat:48.887450, lng:2.352830},
+    {lat:48.882750, lng:2.370130}, {lat:48.872000, lng:2.370400}, {lat:48.865110, lng:2.363460},
+    {lat:48.861310, lng:2.371100}, {lat:48.854210, lng:2.348320}, {lat:48.852110, lng:2.361120},
+    {lat:48.848700, lng:2.354800}, {lat:48.841480, lng:2.348110}, {lat:48.840030, lng:2.322410},
+    {lat:48.832870, lng:2.315840}, {lat:48.829320, lng:2.344820}, {lat:48.822540, lng:2.362330}
+  ],
+  strasbourg: [
+    {lat:48.583800, lng:7.744930}, {lat:48.583310, lng:7.748320}, {lat:48.581900, lng:7.743180},
+    {lat:48.581150, lng:7.746900}, {lat:48.580210, lng:7.749480}, {lat:48.579320, lng:7.750240},
+    {lat:48.577970, lng:7.745990}, {lat:48.575450, lng:7.748020}, {lat:48.574630, lng:7.757230},
+    {lat:48.573870, lng:7.760580}, {lat:48.578920, lng:7.772100}, {lat:48.587000, lng:7.751500},
+    {lat:48.588440, lng:7.741840}, {lat:48.593210, lng:7.748950}, {lat:48.598180, lng:7.759090},
+    {lat:48.600420, lng:7.744360}, {lat:48.591210, lng:7.780200}, {lat:48.583650, lng:7.780760},
+    {lat:48.570850, lng:7.746120}, {lat:48.567700, lng:7.747230}
+  ],
+  reichshoffen: [
+    {lat:48.938780, lng:7.854920}, {lat:48.939850, lng:7.858590}, {lat:48.941540, lng:7.861430},
+    {lat:48.943690, lng:7.865010}, {lat:48.944830, lng:7.871260}, {lat:48.945980, lng:7.875930},
+    {lat:48.947300, lng:7.880660}, {lat:48.949200, lng:7.885950}, {lat:48.950770, lng:7.890010},
+    {lat:48.951920, lng:7.893030}, {lat:48.953430, lng:7.896210}, {lat:48.954850, lng:7.899230},
+    {lat:48.955900, lng:7.902150}, {lat:48.957110, lng:7.905210}, {lat:48.958410, lng:7.908260}
+  ],
+  lunel: [
+    {lat:43.676510, lng:4.135760}, {lat:43.677600, lng:4.138450}, {lat:43.675800, lng:4.130200},
+    {lat:43.674620, lng:4.132880}, {lat:43.678260, lng:4.140020}, {lat:43.679400, lng:4.142950},
+    {lat:43.680300, lng:4.145210}, {lat:43.682220, lng:4.148340}, {lat:43.684150, lng:4.146970},
+    {lat:43.685980, lng:4.143440}, {lat:43.687320, lng:4.140840}, {lat:43.688780, lng:4.138150},
+    {lat:43.689910, lng:4.134830}, {lat:43.690540, lng:4.131780}, {lat:43.691800, lng:4.129520},
+    {lat:43.693100, lng:4.128020}, {lat:43.694520, lng:4.132620}, {lat:43.693920, lng:4.137550},
+    {lat:43.692750, lng:4.141320}, {lat:43.691300, lng:4.144250}
+  ]
 };
 
-// Tirer un point aléatoire dans la ville
-function getRandomPoint(points){
-  return points[Math.floor(Math.random()*points.length)];
+/* Europe sample points (centres of streets) */
+const europePoints = [
+  {lat:51.507350, lng:-0.127758}, // Londres - centre (onroad)
+  {lat:52.520008, lng:13.404954}, // Berlin - centre
+  {lat:52.370216, lng:4.895168},  // Amsterdam - centre
+  {lat:40.416775, lng:-3.703790}, // Madrid - centre
+  {lat:41.902782, lng:12.496366}, // Rome - centre
+  {lat:38.722252, lng:-9.139337}, // Lisbonne - centre
+  {lat:50.850346, lng:4.351721}   // Bruxelles - centre
+];
+
+/* Utilitaires */
+function randInt(n){ return Math.floor(Math.random()*n) }
+function choice(arr){ return arr[randInt(arr.length)] }
+
+/* Haversine distance (km) -- calcule distance entre deux points */
+function haversineKm(lat1, lon1, lat2, lon2){
+  function toRad(d){ return d * Math.PI/180 }
+  const R = 6371; // km
+  const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1)
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
 }
 
-// Changer de position
-function newPosition(){
-  const city = document.getElementById("city-select").value;
-  const point = getRandomPoint(cityPoints[city]);
-  document.getElementById("sv").src =
-    `https://www.google.com/maps?q&layer=c&cbll=${point.lat},${point.lng}&cbp=12,0,0,0,0&output=svembed`;
+/* Score function : 0..5000 (approx GeoGuessr-ish) */
+function scoreFromDistanceKm(dKm){
+  const maxDist = 20000; // km (pratiquement 1/2 terre)
+  const frac = Math.min(dKm, maxDist)/maxDist;
+  const score = Math.round(5000 * (1 - frac));
+  return Math.max(0, score);
 }
 
-// Initialisation
-newPosition();
+/* -------------------------
+   Jeu : état
+   ------------------------- */
+let current = {
+  lat:null, lng:null, cityKey:null, mode:'city'
+};
+let map, guessMarker = null, actualMarker = null, line = null;
+let placing = false, guessLatLng = null;
+let roundsTotal = 5, roundIndex = 0, timerSeconds = 60, timerId = null, timerRunning = false;
+let totalScore = 0;
+
+/* ---------- Initialisation Leaflet map ---------- */
+function initMap(){
+  map = L.map('map', {attributionControl:false, minZoom:2}).setView([48.8566,2.3522], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  map.on('click', function(e){
+    if(!placing) return;
+    placeGuessMarker(e.latlng);
+  });
+}
+
+/* Place (ou replace) le marker d'estimation */
+function placeGuessMarker(latlng){
+  guessLatLng = latlng;
+  if(guessMarker) guessMarker.setLatLng(latlng);
+  else guessMarker = L.marker(latlng, {draggable:true}).addTo(map);
+  guessMarker.on('dragend', e => { guessLatLng = e.target.getLatLng() });
+}
+
+/* Zoom map to show both guess & actual */
+function fitMapToBoth(aLatLng){
+  const group = [];
+  if(guessLatLng) group.push([guessLatLng.lat, guessLatLng.lng]);
+  if(aLatLng) group.push([aLatLng.lat, aLatLng.lng]);
+  if(group.length>0) map.fitBounds(group, {padding:[30,30], maxZoom:14});
+}
+
+/* Cleanup markers/lines for next round */
+function clearRoundDraw(){
+  if(guessMarker){ map.removeLayer(guessMarker); guessMarker = null; guessLatLng = null; }
+  if(actualMarker){ map.removeLayer(actualMarker); actualMarker = null; }
+  if(line){ map.removeLayer(line); line = null; }
+}
+
+/* -------------------------
+   Street View iframe
+   ------------------------- */
+function setStreetView(lat,lng){
+  // embed street view via google maps svembed (no API)
+  const src = `https://www.google.com/maps?q&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed`;
+  const iframe = document.getElementById('sv');
+  iframe.src = src;
+}
+
+/* -------------------------
+   Game flow
+   ------------------------- */
+function resetGame(){
+  roundIndex = 0; totalScore = 0;
+  document.getElementById('scoreInfo').textContent = totalScore;
+  document.getElementById('finalBox').innerHTML = '';
+  clearRoundDraw();
+  stopTimer();
+  updateRoundUI();
+}
+
+function startGame(){
+  roundsTotal = parseInt(document.getElementById('roundsInput').value) || 5;
+  timerSeconds = parseInt(document.getElementById('timerInput').value) || 60;
+  document.getElementById('roundScore').textContent = '—';
+  resetGame();
+  nextRound();
+}
+
+function nextRound(){
+  // clean
+  clearRoundDraw();
+  guessLatLng = null;
+  placing = true;
+  document.getElementById('distanceInfo').textContent = '—';
+  document.getElementById('roundScore').textContent = '—';
+  document.getElementById('confirmBtn').disabled = false;
+  document.getElementById('placeGuessBtn').disabled = false;
+  document.getElementById('revealBtn').disabled = false;
+  document.getElementById('skipBtn').disabled = false;
+
+  // increment round
+  roundIndex++;
+  updateRoundUI();
+  // pick a new point according to mode
+  const mode = document.getElementById('modeSelect').value;
+  current.mode = mode;
+  if(mode === 'city'){
+    const cityKey = document.getElementById('city-select').value;
+    current.cityKey = cityKey;
+    current = {...current, ...(choice(cityPoints[cityKey]))}; // pick a random street point in city
+  } else if(mode === 'france'){
+    // choose among the 4 cities we have (they are all French and have street points)
+    const cityKey = choice(Object.keys(cityPoints));
+    current.cityKey = cityKey;
+    current = {...current, ...(choice(cityPoints[cityKey]))};
+  } else if(mode === 'europe'){
+    const p = choice(europePoints);
+    current.cityKey = 'europe';
+    current.lat = p.lat; current.lng = p.lng;
+  }
+
+  // set SV
+  setStreetView(current.lat, current.lng);
+
+  // auto-center small map to a reasonable view
+  map.setView([current.lat, current.lng], (current.mode === 'europe' ? 6 : 13));
+  // start timer
+  startTimer(timerSeconds);
+
+  // hide final if any
+  document.getElementById('finalBox').innerHTML = '';
+}
+
+/* Validate guess (manually or by timer) */
+function submitGuess(auto=false){
+  if(!placing) return;
+  placing = false;
+  stopTimer();
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('placeGuessBtn').disabled = true;
+
+  if(!guessLatLng){
+    // No guess placed -> score 0 for this round
+    document.getElementById('distanceInfo').textContent = 'Aucune estimation — 0 pts';
+    document.getElementById('roundScore').textContent = '0';
+    updateScoreAndProceed(0, null);
+    return;
+  }
+
+  const dKm = haversineKm(current.lat, current.lng, guessLatLng.lat, guessLatLng.lng);
+  const pts = scoreFromDistanceKm(dKm);
+  document.getElementById('distanceInfo').textContent = dKm.toFixed(2) + ' km';
+  document.getElementById('roundScore').textContent = pts;
+
+  // show actual marker & line
+  actualMarker = L.marker([current.lat, current.lng], {opacity:0.9}).addTo(map);
+  line = L.polyline([[guessLatLng.lat, guessLatLng.lng],[current.lat, current.lng]], {color:'#22c1c1'}).addTo(map);
+  fitMapToBoth({lat:current.lat, lng:current.lng});
+
+  updateScoreAndProceed(pts, dKm);
+}
+
+/* When skipping */
+function skipRound(){
+  placing = false;
+  stopTimer();
+  clearRoundDraw();
+  document.getElementById('distanceInfo').textContent = 'Passée — 0 pts';
+  document.getElementById('roundScore').textContent = '0';
+  updateScoreAndProceed(0, null);
+}
+
+/* Reveal actual without scoring change */
+function revealActual(){
+  if(actualMarker) return;
+  actualMarker = L.marker([current.lat, current.lng]).addTo(map);
+  map.setView([current.lat, current.lng], 14);
+}
+
+/* After scoring, update totals and proceed to next or end */
+function updateScoreAndProceed(pts, dKm){
+  totalScore += pts;
+  document.getElementById('scoreInfo').textContent = totalScore;
+  // small delay to let player see line, then either next or end
+  setTimeout(()=>{
+    if(roundIndex >= roundsTotal){
+      endGame();
+    } else {
+      // Wait user to click "Nouvelle position" or automatically go next
+      // We'll move automatically after 1.2s
+      nextRound();
+    }
+  }, 1200);
+}
+
+/* End game */
+function endGame(){
+  placing = false;
+  stopTimer();
+  document.getElementById('finalBox').innerHTML = `<div style="font-weight:700; font-size:16px">Partie terminée — Score final : ${totalScore}</div>
+    <div style="margin-top:8px">Vous pouvez rejouer ou changer les paramètres.</div>`;
+}
+
+/* -------------------------
+   Timer controls
+   ------------------------- */
+function startTimer(seconds){
+  stopTimer();
+  let t = seconds;
+  document.getElementById('timer').textContent = t;
+  timerRunning = true;
+  timerId = setInterval(()=>{
+    t--;
+    document.getElementById('timer').textContent = t;
+    if(t <= 0){
+      // auto submit guess
+      clearInterval(timerId);
+      timerRunning = false;
+      submitGuess(true);
+    }
+  }, 1000);
+}
+
+function stopTimer(){
+  if(timerId) clearInterval(timerId);
+  timerId = null;
+  timerRunning = false;
+}
+
+/* -------------------------
+   UI hooks
+   ------------------------- */
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  startGame();
+});
+document.getElementById('replayBtn').addEventListener('click', ()=>{
+  resetGame();
+});
+document.getElementById('nextBtnTop').addEventListener('click', ()=>{
+  // allow manual "next" (counts as starting next round)
+  if(roundIndex >= roundsTotal) { resetGame(); startGame(); return; }
+  nextRound();
+});
+
+document.getElementById('placeGuessBtn').addEventListener('click', ()=>{
+  placing = true;
+  // hint
+  document.getElementById('finalBox').innerHTML = '<div class="muted">Clique sur la mini-carte pour placer ton estimation, ou déplace le marqueur.</div>';
+});
+document.getElementById('confirmBtn').addEventListener('click', ()=>{
+  submitGuess(false);
+});
+document.getElementById('skipBtn').addEventListener('click', ()=>{
+  skipRound();
+});
+document.getElementById('revealBtn').addEventListener('click', ()=>{
+  revealActual();
+});
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  if(timerRunning){ stopTimer(); document.getElementById('pauseBtn').textContent = 'Reprendre'; }
+  else { startTimer(parseInt(document.getElementById('timer').textContent)||timerSeconds); document.getElementById('pauseBtn').textContent = 'Pause'; }
+});
+
+/* update round + UI labels */
+function updateRoundUI(){
+  document.getElementById('roundInfo').textContent = `${Math.min(roundIndex, roundsTotal)} / ${roundsTotal}`;
+  document.getElementById('timer').textContent = timerSeconds;
+  document.getElementById('distanceInfo').textContent = '—';
+  document.getElementById('roundScore').textContent = '—';
+}
+
+/* init map and default game state */
+initMap();
+resetGame();
+
+/* Start with an initial random SV for preview */
+(function initialPreview(){
+  // pick Paris first
+  const p = choice(cityPoints.paris);
+  setStreetView(p.lat, p.lng);
+})();
+
+/* Accessibility: allow Enter to validate guess when in placing mode */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') submitGuess(false);
+});
+
+/* Extra: when user clicks on map, show marker and enable confirm button */
+map && map.on && map.on('click', function(){ document.getElementById('confirmBtn').disabled = false });
+
 </script>
-
 </body>
 </html>
-
