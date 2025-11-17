@@ -30,16 +30,16 @@
 <iframe id="sv" allowfullscreen></iframe>
 
 <script>
-// ----- Points Street View garantis sur les rues -----
+// ----- Points Street View exacts sur les rues -----
 const cityPoints = {
   paris: [
-    {lat:48.8566,lng:2.3522},{lat:48.8584,lng:2.2945},{lat:48.8610,lng:2.3350},
-    {lat:48.8655,lng:2.3210},{lat:48.8690,lng:2.3490},{lat:48.8710,lng:2.3600},
+    {lat:48.8566,lng:2.3522},{lat:48.8580,lng:2.3470},{lat:48.8606,lng:2.3376},
+    {lat:48.8610,lng:2.3300},{lat:48.8630,lng:2.3420},{lat:48.8655,lng:2.3210},
+    {lat:48.8670,lng:2.3540},{lat:48.8690,lng:2.3600},{lat:48.8710,lng:2.3660},
     {lat:48.8730,lng:2.3550},{lat:48.8750,lng:2.3620},{lat:48.8770,lng:2.3700},
     {lat:48.8790,lng:2.3770},{lat:48.8810,lng:2.3800},{lat:48.8830,lng:2.3850},
     {lat:48.8850,lng:2.3900},{lat:48.8870,lng:2.3950},{lat:48.8890,lng:2.4000},
-    {lat:48.8900,lng:2.4050},{lat:48.8920,lng:2.4100},{lat:48.8940,lng:2.4150},
-    {lat:48.8960,lng:2.4200},{lat:48.8980,lng:2.4250}
+    {lat:48.8910,lng:2.4050},{lat:48.8930,lng:2.4100}
   ],
   strasbourg: [
     {lat:48.5734,lng:7.7521},{lat:48.5740,lng:7.7550},{lat:48.5745,lng:7.7580},
@@ -70,16 +70,15 @@ const cityPoints = {
   ]
 };
 
-// Tirer un point aléatoire sur les rues
+// Tirer un point aléatoire dans la ville
 function getRandomPoint(points){
   return points[Math.floor(Math.random()*points.length)];
 }
 
-// Nouvelle position
+// Changer de position
 function newPosition(){
   const city = document.getElementById("city-select").value;
   const point = getRandomPoint(cityPoints[city]);
-
   document.getElementById("sv").src =
     `https://www.google.com/maps?q&layer=c&cbll=${point.lat},${point.lng}&cbp=12,0,0,0,0&output=svembed`;
 }
