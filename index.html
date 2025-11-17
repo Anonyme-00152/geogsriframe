@@ -32,42 +32,96 @@
 <script>
 // ----- Points Street View exacts sur les rues -----
 const cityPoints = {
-  paris: [
-    {lat:48.8566,lng:2.3522},{lat:48.8580,lng:2.3470},{lat:48.8606,lng:2.3376},
-    {lat:48.8610,lng:2.3300},{lat:48.8630,lng:2.3420},{lat:48.8655,lng:2.3210},
-    {lat:48.8670,lng:2.3540},{lat:48.8690,lng:2.3600},{lat:48.8710,lng:2.3660},
-    {lat:48.8730,lng:2.3550},{lat:48.8750,lng:2.3620},{lat:48.8770,lng:2.3700},
-    {lat:48.8790,lng:2.3770},{lat:48.8810,lng:2.3800},{lat:48.8830,lng:2.3850},
-    {lat:48.8850,lng:2.3900},{lat:48.8870,lng:2.3950},{lat:48.8890,lng:2.4000},
-    {lat:48.8910,lng:2.4050},{lat:48.8930,lng:2.4100}
-  ],
-  strasbourg: [
-    {lat:48.5734,lng:7.7521},{lat:48.5740,lng:7.7550},{lat:48.5745,lng:7.7580},
-    {lat:48.5750,lng:7.7600},{lat:48.5755,lng:7.7630},{lat:48.5760,lng:7.7650},
-    {lat:48.5765,lng:7.7680},{lat:48.5770,lng:7.7700},{lat:48.5775,lng:7.7730},
-    {lat:48.5780,lng:7.7750},{lat:48.5785,lng:7.7780},{lat:48.5790,lng:7.7800},
-    {lat:48.5795,lng:7.7830},{lat:48.5800,lng:7.7850},{lat:48.5805,lng:7.7880},
-    {lat:48.5810,lng:7.7900},{lat:48.5815,lng:7.7930},{lat:48.5820,lng:7.7950},
-    {lat:48.5825,lng:7.7980},{lat:48.5830,lng:7.8000}
-  ],
-  reichshoffen: [
-    {lat:48.9460,lng:7.8950},{lat:48.9470,lng:7.8970},{lat:48.9480,lng:7.8990},
-    {lat:48.9490,lng:7.9010},{lat:48.9500,lng:7.9030},{lat:48.9510,lng:7.9050},
-    {lat:48.9520,lng:7.9070},{lat:48.9530,lng:7.9090},{lat:48.9540,lng:7.9110},
-    {lat:48.9550,lng:7.9130},{lat:48.9560,lng:7.9150},{lat:48.9570,lng:7.9170},
-    {lat:48.9580,lng:7.9190},{lat:48.9590,lng:7.9210},{lat:48.9600,lng:7.9230},
-    {lat:48.9610,lng:7.9250},{lat:48.9620,lng:7.9270},{lat:48.9630,lng:7.9290},
-    {lat:48.9640,lng:7.9310},{lat:48.9650,lng:7.9330}
-  ],
-  lunel: [
-    {lat:43.6760,lng:4.0810},{lat:43.6770,lng:4.0830},{lat:43.6780,lng:4.0850},
-    {lat:43.6790,lng:4.0870},{lat:43.6800,lng:4.0890},{lat:43.6810,lng:4.0910},
-    {lat:43.6820,lng:4.0930},{lat:43.6830,lng:4.0950},{lat:43.6840,lng:4.0970},
-    {lat:43.6850,lng:4.0990},{lat:43.6860,lng:4.1010},{lat:43.6870,lng:4.1030},
-    {lat:43.6880,lng:4.1050},{lat:43.6890,lng:4.1070},{lat:43.6900,lng:4.1090},
-    {lat:43.6910,lng:4.1110},{lat:43.6920,lng:4.1130},{lat:43.6930,lng:4.1150},
-    {lat:43.6940,lng:4.1170},{lat:43.6950,lng:4.1190}
-  ]
+paris: [
+  {lat:48.853889, lng:2.291351}, // Avenue de Suffren
+  {lat:48.856472, lng:2.298883}, // Avenue Rapp
+  {lat:48.858340, lng:2.294520}, // Quai Branly
+  {lat:48.857548, lng:2.303404}, // Rue de l'Université
+  {lat:48.861005, lng:2.335870}, // Rue de Rivoli
+  {lat:48.860070, lng:2.341250}, // Rue St-Honoré
+  {lat:48.864270, lng:2.332010}, // Rue de la Paix
+  {lat:48.870450, lng:2.331220}, // Blvd Haussmann
+  {lat:48.872740, lng:2.343770}, // Rue des Martyrs
+  {lat:48.883100, lng:2.333800}, // Rue Lepic (Montmartre)
+  {lat:48.888020, lng:2.338650}, // Rue Caulaincourt
+  {lat:48.887450, lng:2.352830}, // Rue de Belleville
+  {lat:48.882750, lng:2.370130}, // Rue du Faubourg St-Martin
+  {lat:48.872000, lng:2.370400}, // Rue du Faubourg du Temple
+  {lat:48.865110, lng:2.363460}, // Rue Oberkampf
+  {lat:48.861310, lng:2.371100}, // Rue du Faubourg St-Antoine
+  {lat:48.854210, lng:2.348320}, // Rue Lagrange
+  {lat:48.852110, lng:2.361120}, // Rue du Chemin Vert
+  {lat:48.848700, lng:2.354800}, // Rue Mouffetard
+  {lat:48.841480, lng:2.348110}, // Blvd St-Michel
+  {lat:48.840030, lng:2.322410}, // Rue de Vaugirard
+  {lat:48.832870, lng:2.315840}, // Rue Lecourbe
+  {lat:48.829320, lng:2.344820}, // Rue Bobillot
+  {lat:48.822540, lng:2.362330}  // Rue de Tolbiac
+],
+
+ strasbourg: [
+  {lat:48.583800, lng:7.744930}, // Rue des Hallebardes
+  {lat:48.583310, lng:7.748320}, // Rue Mercière
+  {lat:48.581900, lng:7.743180}, // Rue des Grandes Arcades
+  {lat:48.581150, lng:7.746900}, // Rue du Vieux-Marché-aux-Poissons
+  {lat:48.580210, lng:7.749480}, // Rue des Dentelles
+  {lat:48.579320, lng:7.750240}, // Rue du Faisan
+  {lat:48.577970, lng:7.745990}, // Rue du 22 Novembre
+  {lat:48.575450, lng:7.748020}, // Boulevard de Lyon
+  {lat:48.574630, lng:7.757230}, // Avenue de Colmar
+  {lat:48.573870, lng:7.760580}, // Route du Polygone
+  {lat:48.578920, lng:7.772100}, // Avenue Jean Jaurès
+  {lat:48.587000, lng:7.751500}, // Rue du Général Gouraud
+  {lat:48.588440, lng:7.741840}, // Boulevard Gambetta
+  {lat:48.593210, lng:7.748950}, // Rue de la Robertsau
+  {lat:48.598180, lng:7.759090}, // Avenue de la Forêt-Noire
+  {lat:48.600420, lng:7.744360}, // Allée de la Robertsau
+  {lat:48.591210, lng:7.780200}, // Rue du Jeu-de-Paume
+  {lat:48.583650, lng:7.780760}, // Route de l'Hôpital
+  {lat:48.570850, lng:7.746120}, // Rue du Rempart
+  {lat:48.567700, lng:7.747230}  // Avenue de Colmar sud
+],
+
+ reichshoffen: [
+  {lat:48.938780, lng:7.854920}, // Rue de la République
+  {lat:48.939850, lng:7.858590}, // Rue du Général Koenig
+  {lat:48.941540, lng:7.861430}, // Rue du Château
+  {lat:48.943690, lng:7.865010}, // Rue des Bois
+  {lat:48.944830, lng:7.871260}, // Rue de la Gare
+  {lat:48.945980, lng:7.875930}, // Rue du Nord
+  {lat:48.947300, lng:7.880660}, // Rue de la Paix
+  {lat:48.949200, lng:7.885950}, // Rue des Lilas
+  {lat:48.950770, lng:7.890010}, // Rue de l'Église
+  {lat:48.951920, lng:7.893030}, // Rue Saint-Michel
+  {lat:48.953430, lng:7.896210}, // Rue de la Liberté
+  {lat:48.954850, lng:7.899230}, // Rue du Stade
+  {lat:48.955900, lng:7.902150}, // Rue des Jardins
+  {lat:48.957110, lng:7.905210}, // Rue du Souvenir
+  {lat:48.958410, lng:7.908260}  // Rue Lavoisier
+],
+
+lunel: [
+  {lat:43.676510, lng:4.135760}, // Rue Marx Dormoy
+  {lat:43.677600, lng:4.138450}, // Rue Sadi Carnot
+  {lat:43.675800, lng:4.130200}, // Rue de la Libération
+  {lat:43.674620, lng:4.132880}, // Rue des Abrivados
+  {lat:43.678260, lng:4.140020}, // Rue du Ponant
+  {lat:43.679400, lng:4.142950}, // Rue des Cévennes
+  {lat:43.680300, lng:4.145210}, // Rue des Caladons
+  {lat:43.682220, lng:4.148340}, // Rue des Micocouliers
+  {lat:43.684150, lng:4.146970}, // Rue des Amandiers
+  {lat:43.685980, lng:4.143440}, // Rue des Marais
+  {lat:43.687320, lng:4.140840}, // Rue du Mas Saint-Pierre
+  {lat:43.688780, lng:4.138150}, // Rue du Lézard
+  {lat:43.689910, lng:4.134830}, // Rue Émile Zola
+  {lat:43.690540, lng:4.131780}, // Rue Pierre Curie
+  {lat:43.691800, lng:4.129520}, // Rue Voltaire
+  {lat:43.693100, lng:4.128020}, // Rue Armand Guillaumin
+  {lat:43.694520, lng:4.132620}, // Rue Frédéric Mistral
+  {lat:43.693920, lng:4.137550}, // Rue du Docteur Jean Gautier
+  {lat:43.692750, lng:4.141320}, // Rue Georges Bizet
+  {lat:43.691300, lng:4.144250}  // Rue du Marché aux Bestiaux
+]
 };
 
 // Tirer un point aléatoire dans la ville
@@ -89,3 +143,4 @@ newPosition();
 
 </body>
 </html>
+
